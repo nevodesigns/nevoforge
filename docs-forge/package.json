@@ -1,0 +1,14 @@
+{
+  "name": "nevoforge-docs-forge",
+  "version": "0.1.0",
+  "description": "NevoForge report pipeline: structured markdown in, formatted Word report out",
+  "main": "src/report.js",
+  "scripts": {
+    "build": "node src/report.js"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "docx": "^9.0.0"
+  }
+}
