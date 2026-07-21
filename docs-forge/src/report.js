@@ -26,6 +26,7 @@ const {
   buildFigurePlaceholder,
   buildFooter,
 } = require("./template");
+const { buildCoverPage } = require("./cover");
 
 // Split frontmatter (between leading --- fences) from the markdown body.
 function parseFrontmatter(source) {
@@ -171,7 +172,7 @@ async function main() {
     sections: [
       {
         footers: { default: buildFooter() },
-        children: buildBody(body),
+        children: [...buildCoverPage(meta), ...buildBody(body)],
       },
     ],
   });
