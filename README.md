@@ -1,5 +1,7 @@
 # NevoForge
 
+**Live site:** https://nevoforge.pxxl.run/
+
 One student, one AI engineering studio. NevoForge turns raw technical chaos into professional deliverables: messy engineering notes become formatted reports, ideas become polished decks and brand visuals, and CAD files get real mechanical design audits.
 
 Registered as ASP #7058 on the OKX.AI marketplace.
