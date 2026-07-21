@@ -27,6 +27,7 @@ const {
   buildFooter,
 } = require("./template");
 const { buildCoverPage } = require("./cover");
+const { numbering, headingNumbering } = require("./numbering");
 
 // Split frontmatter (between leading --- fences) from the markdown body.
 function parseFrontmatter(source) {
@@ -65,11 +66,12 @@ const HEADING_LEVELS = [
   HeadingLevel.HEADING_3,
 ];
 
-// Build a heading paragraph for markdown level 1..3.
+// Build a numbered heading paragraph for markdown level 1..3.
 function buildHeading(text, level) {
   return new Paragraph({
     heading: HEADING_LEVELS[level - 1],
-    children: [new TextRun({ text })],
+    numbering: headingNumbering(level),
+    children: [new TextRun({ text: ` ${text}` })],
   });
 }
 
@@ -169,6 +171,7 @@ async function main() {
   const doc = new Document({
     title: meta.title || path.basename(inputPath),
     styles,
+    numbering,
     sections: [
       {
         footers: { default: buildFooter() },
