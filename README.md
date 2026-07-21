@@ -13,3 +13,8 @@ Registered as ASP #7058 on the OKX.AI marketplace.
 ## Order flow
 
 Every order follows the checklist in `DELIVERY.md`: clarify scope, confirm price, produce draft, self-review, deliver, request review.
+
+## Built by
+
+Built by [NevoDesigns](https://nevodesigns.github.io/), a one-student studio productizing its own engineering workflows.
+Follow along on [X](https://x.com/nevo_design).
