@@ -70,6 +70,10 @@ def classify(counts):
     return fasteners, bearings, other
 
 
+def plural(count: int, word: str) -> str:
+    return f"{count} {word}" if count == 1 else f"{count} {word}s"
+
+
 def inventory_table(groups: dict[str, dict]) -> list[str]:
     lines = ["| Size | Quantity | Part names |", "|---|---|---|"]
     for size in sorted(groups):
@@ -113,8 +117,8 @@ def build_report(model, model_name: str) -> str:
     push("# Fastener Inventory")
     if fasteners:
         push(
-            f"{sum(e['qty'] for e in fasteners.values())} fasteners "
-            f"across {len(fasteners)} sizes."
+            f"{plural(sum(e['qty'] for e in fasteners.values()), 'fastener')} "
+            f"across {plural(len(fasteners), 'size')}."
         )
         push("")
         lines.extend(inventory_table(fasteners))
@@ -125,8 +129,8 @@ def build_report(model, model_name: str) -> str:
     push("# Bearing Inventory")
     if bearings:
         push(
-            f"{sum(e['qty'] for e in bearings.values())} bearings "
-            f"across {len(bearings)} sizes."
+            f"{plural(sum(e['qty'] for e in bearings.values()), 'bearing')} "
+            f"across {plural(len(bearings), 'size')}."
         )
         push("")
         lines.extend(inventory_table(bearings))
