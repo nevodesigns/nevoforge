@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node src/report.js"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "dependencies": {
     "docx": "^9.0.0"
