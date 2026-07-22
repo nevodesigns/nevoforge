@@ -71,6 +71,28 @@ def classify(counts):
     return fasteners, bearings, other
 
 
+def esc(text: str) -> str:
+    """Neutralise client-derived text before it enters the report.
+
+    Part names come from the client's STEP file and are untrusted. Without this
+    a crafted file could inject headings, tables, or images into a report we
+    then send back to that client. Strips control characters, collapses
+    newlines, escapes markdown structure, and truncates runaway names.
+    """
+    if text is None:
+        return ""
+    s = str(text)
+    # drop control characters, including newlines that would break table rows
+    s = "".join(ch if ch.isprintable() else " " for ch in s)
+    # escape markdown structural characters
+    for ch in ("\\", "|", "`", "*", "_", "#", "[", "]", "<", ">"):
+        s = s.replace(ch, "\\" + ch)
+    s = re.sub(r"\s+", " ", s).strip()
+    if len(s) > 120:
+        s = s[:117] + "..."
+    return s or "(unnamed)"
+
+
 def plural(count: int, word: str) -> str:
     return f"{count} {word}" if count == 1 else f"{count} {word}s"
 
@@ -79,7 +101,7 @@ def inventory_table(groups: dict[str, dict]) -> list[str]:
     lines = ["| Size | Quantity | Part names |", "|---|---|---|"]
     for size in sorted(groups):
         entry = groups[size]
-        parts = ", ".join(sorted(entry["parts"]))
+        parts = ", ".join(esc(p) for p in sorted(entry["parts"]))
         lines.append(f"| {size} | {entry['qty']} | {parts} |")
     return lines
 
@@ -93,7 +115,7 @@ def build_report(model, model_name: str) -> str:
     push = lines.append
 
     push("---")
-    push(f"title: CAD Design Audit: {model_name}")
+    push(f"title: CAD Design Audit: {esc(model_name)}")
     push("subtitle: Mechanical design review")
     push("author: NevoForge")
     push(f"date: {today}")
@@ -101,7 +123,7 @@ def build_report(model, model_name: str) -> str:
 
     push("# Model Overview")
     push(
-        f"Source file **{os.path.basename(model.path)}** contains "
+        f"Source file **{esc(os.path.basename(model.path))}** contains "
         f"{len(model.entities)} entities, {len(model.products)} distinct products "
         f"and {len(model.solids)} solid bodies. "
         f"Total placed instances: {sum(counts.values())}."
@@ -110,9 +132,9 @@ def build_report(model, model_name: str) -> str:
     push("| Part | Quantity |")
     push("|---|---|")
     for name in sorted(counts):
-        push(f"| {name} | {counts[name]} |")
+        push(f"| {esc(name)} | {counts[name]} |")
     push("")
-    push(f"![Assembly overview of {model_name}](placeholder)")
+    push(f"![Assembly overview of {esc(model_name)}](placeholder)")
     push("")
 
     push("# Fastener Inventory")
@@ -144,7 +166,7 @@ def build_report(model, model_name: str) -> str:
         push("| Part | Quantity |")
         push("|---|---|")
         for name in sorted(other):
-            push(f"| {name} | {other[name]} |")
+            push(f"| {esc(name)} | {other[name]} |")
         push("")
 
     push("# Load and Design Concerns")
