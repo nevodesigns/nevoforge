@@ -182,6 +182,28 @@ async function main() {
     process.exit(2);
   }
 
+  // Reject binary files masquerading as markdown (for example a renamed image).
+  // Without this the pipeline happily produces a garbage document.
+  const head = fs.readFileSync(inputPath).subarray(0, 4096);
+  if (head.includes(0)) {
+    console.error(
+      `error: ${inputPath}: looks like a binary file, not markdown text. ` +
+        `Ask the client to send the notes as text.`
+    );
+    process.exit(2);
+  }
+  let nonPrintable = 0;
+  for (const b of head) {
+    if (b < 9 || (b > 13 && b < 32)) nonPrintable++;
+  }
+  if (head.length > 0 && nonPrintable / head.length > 0.1) {
+    console.error(
+      `error: ${inputPath}: does not look like readable text. ` +
+        `Ask the client to send the notes as markdown or plain text.`
+    );
+    process.exit(2);
+  }
+
   const source = fs.readFileSync(inputPath, "utf8");
   const { meta, body } = parseFrontmatter(source);
 
