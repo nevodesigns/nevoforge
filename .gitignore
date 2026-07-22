@@ -4,3 +4,11 @@ __pycache__/
 output/
 .DS_Store
 demo/
+.env
+.env.*
+*.pem
+*.key
+.npmrc
+*.p12
+credentials*
+.netrc
