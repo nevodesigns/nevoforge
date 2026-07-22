@@ -156,6 +156,32 @@ async function main() {
     process.exit(1);
   }
 
+  // Client notes are untrusted input. Refuse oversized files up front with a
+  // clear message rather than letting the process exhaust memory.
+  const MAX_INPUT_BYTES = 5 * 1024 * 1024; // 5 MB
+  let stat;
+  try {
+    stat = fs.statSync(inputPath);
+  } catch (e) {
+    console.error(`error: cannot read input file: ${inputPath}`);
+    process.exit(2);
+  }
+  if (!stat.isFile()) {
+    console.error(`error: not a file: ${inputPath}`);
+    process.exit(2);
+  }
+  if (stat.size === 0) {
+    console.error(`error: ${inputPath}: file is empty`);
+    process.exit(2);
+  }
+  if (stat.size > MAX_INPUT_BYTES) {
+    console.error(
+      `error: ${inputPath}: file is ${(stat.size / 1048576).toFixed(1)} MB, ` +
+        `limit is ${MAX_INPUT_BYTES / 1048576} MB. Ask the client to split the notes.`
+    );
+    process.exit(2);
+  }
+
   const source = fs.readFileSync(inputPath, "utf8");
   const { meta, body } = parseFrontmatter(source);
 

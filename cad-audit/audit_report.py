@@ -13,8 +13,9 @@ import argparse
 import datetime
 import os
 import re
+import sys
 
-from step_parser import parse_step
+from step_parser import parse_step, StepFileTooLarge
 
 FASTENER_RE = re.compile(
     r"screw|bolt|nut|washer|standoff|insert|rivet|shcs|fhcs|bhcs|"
@@ -175,7 +176,25 @@ def main() -> None:
     ap.add_argument("-o", "--output", default=None, help="output markdown path")
     args = ap.parse_args()
 
-    model = parse_step(args.step_file)
+    try:
+        model = parse_step(args.step_file)
+    except StepFileTooLarge as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(2)
+    except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(2)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(2)
+    except UnicodeError as exc:
+        print(
+            f"error: {args.step_file}: not readable as text, this does not look "
+            f"like a STEP part 21 file ({exc})",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
     model_name = os.path.splitext(os.path.basename(args.step_file))[0]
     report = build_report(model, model_name)
 

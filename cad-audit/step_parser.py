@@ -9,6 +9,7 @@ PRODUCT it instantiates.
 
 from __future__ import annotations
 
+import os
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -18,6 +19,17 @@ SOLID_TYPES = {
     "BREP_WITH_VOIDS",
     "FACETED_BREP",
 }
+
+# Safety limits. Client files are untrusted: a very large STEP file can exhaust
+# memory (parsing amplifies file size roughly 25x once entities are held in a
+# dict). Refuse oversized input up front with a clear message instead of
+# letting the machine run out of RAM.
+MAX_FILE_BYTES = 50 * 1024 * 1024   # 50 MB
+MAX_ENTITIES = 2_000_000
+
+
+class StepFileTooLarge(Exception):
+    """Raised when an input STEP file exceeds the safety limits."""
 
 _RECORD_RE = re.compile(r"^#(\d+)\s*=\s*([A-Z0-9_]*)\s*\((.*)\)$", re.S)
 _REF_RE = re.compile(r"#(\d+)")
@@ -119,6 +131,19 @@ def _iter_records(data_section: str):
 
 
 def parse_step(path: str) -> StepModel:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"{path}: no such file")
+
+    size = os.path.getsize(path)
+    if size > MAX_FILE_BYTES:
+        raise StepFileTooLarge(
+            f"{path}: file is {size / 1048576:.1f} MB, limit is "
+            f"{MAX_FILE_BYTES / 1048576:.0f} MB. Ask the client to simplify or "
+            f"split the assembly."
+        )
+    if size == 0:
+        raise ValueError(f"{path}: file is empty")
+
     with open(path, "r", encoding="utf-8", errors="replace") as fh:
         text = fh.read()
 
@@ -135,6 +160,11 @@ def parse_step(path: str) -> StepModel:
             continue
         eid, etype, args = int(m.group(1)), m.group(2), m.group(3)
         model.entities[eid] = StepEntity(eid=eid, etype=etype or "COMPLEX", raw_args=args)
+        if len(model.entities) > MAX_ENTITIES:
+            raise StepFileTooLarge(
+                f"{path}: more than {MAX_ENTITIES:,} entities, refusing to "
+                f"continue. Ask the client to simplify the assembly."
+            )
     return model
 
 
