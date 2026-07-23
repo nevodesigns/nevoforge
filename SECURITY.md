@@ -58,12 +58,44 @@ confidential CAD file, and keeps them out of anything that gets published.
 - Never paste client file contents into a chat or an online tool without
   reading it first.
 
+## Rendering client decks
+
+**Always use the sandboxed renderer for anything a client sent:**
+
+```
+cd design-studio
+./build-pdf-sandboxed.sh ~/clientwork/<order-id>/in/deck.html ~/clientwork/<order-id>/out/deck.pdf
+```
+
+`build-pdf-sandboxed.sh` runs Chrome inside its own empty network namespace via
+bubblewrap, the same isolation `docker run --network none` provides. The
+namespace has no interfaces and its own isolated loopback, so egress is
+physically impossible, not merely blocked. A request to a literal IP such as
+`http://127.0.0.1:8099` or a LAN address cannot reach the host. The filesystem
+is mounted read only apart from the output directory, and Chrome's own renderer
+sandbox stays enabled on top.
+
+`build-pdf.sh` is the fallback for when bubblewrap is unavailable. It blocks
+name resolution with `--host-resolver-rules="MAP * ~NOTFOUND"`. Measured, this
+also stops direct IP and LAN requests, but it is a Chrome level control rather
+than a kernel level one, so prefer the sandbox.
+
+Measured results, same malicious deck against each (direct IP and LAN IP, via
+both `<img>` and `fetch`):
+
+| Renderer | Requests that reached the listener |
+|---|---|
+| Plain Chrome, no protection | 4 of 4 |
+| `build-pdf.sh` (DNS blocked) | 0 of 4 |
+| `build-pdf-sandboxed.sh` (network namespace) | 0 of 4 |
+
+Neither renderer loads remote assets, by design. Download any legitimate image
+or font yourself, check it, and reference it locally.
+
 ## What the pipelines already protect against
 
-- **Decks:** Chrome runs with `--host-resolver-rules="MAP * ~NOTFOUND"`, so DNS
-  fails for every host. A malicious deck cannot phone home, probe the local
-  network, or exfiltrate anything. The Chrome sandbox is on and `file://` reads
-  are blocked.
+- **Decks:** two layers are available, and for client HTML you should use the
+  sandboxed one. See "Rendering client decks" below.
 - **STEP files:** size and entity limits reject oversized input with a clear
   error instead of exhausting memory. The parser has no `eval`, `exec`, or
   shell invocation.
